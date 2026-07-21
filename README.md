@@ -1,6 +1,6 @@
-# Webflow JS Starter
+# Mazenod Webflow Site
 
-This GitHub project provides a development workflow for JavaScript files in Webflow JS Starter.
+This GitHub project provides a development workflow for JavaScript files in Mazenod Webflow Site.
 
 In essence, it uses bun to start a development server on [localhost:3000](http://localhost:3000), bundle, build and serve any working file (from the `/src` directory) in local mode. Once pushed up and merged into `main`, it's auto-tagged with the latest semver tag version (using Github CI), and the production code will be auto-loaded from [jsDelivr CDN](https://www.jsdelivr.com/).
 
@@ -11,12 +11,12 @@ In essence, it uses bun to start a development server on [localhost:3000](http:/
 ### Prerequisites
 
 - Have [bun](https://bun.sh/) installed locally. Installation guidelines [here](https://bun.sh/docs/installation) (recommended approach - homebrew / curl)
-   - Alternatively, `pnpm` or `npm` will work too.
+  - Alternatively, `pnpm` or `npm` will work too.
 
 ### Setup
 
 - Run `bun install`
-   - Alternatively, `pnpm install` or `npm install`
+  - Alternatively, `pnpm install` or `npm install`
 
 ## Usage
 
@@ -31,10 +31,11 @@ The project will process and output the files mentioned in the `files` const of 
 1. The initial `entry.js` file needs to be made available via external server first for this system to work (in the `<head>` area of the site).
 
    ```html
-   <script src="https://cdn.jsdelivr.net/gh/igniteagency/{{repo}}/dist/prod/entry.js"></script>
+   <script src="https://cdn.jsdelivr.net/gh/igniteagency/mazenod-webflow-site/dist/prod/entry.js"></script>
    ```
 
    For occasional localhost testing when editing `entry.js`, you'll have to manually include that script like following:
+
    ```html
    <script src="http://localhost:3000/entry.js"></script>
    ```
@@ -44,6 +45,7 @@ The project will process and output the files mentioned in the `files` const of 
    You can load any script relative to your repo, or a full CDN URL, using the global `window.loadScript` function. This is the recommended way to load scripts in this setup.
 
    **Usage:**
+
    ```js
    // Load a relative script (from CDN or localhost, depending on env)
    window.loadScript('global.js');
@@ -53,19 +55,19 @@ The project will process and output the files mentioned in the `files` const of 
      placement: 'head', // 'head' or 'body' (default: 'body')
      scriptName: 'some-lib', // Optional: emits a custom event 'scriptLoaded:some-lib' when loaded
      defer: true, // (default: true)
-     isModule: false // (default: false)
+     isModule: false, // (default: false)
    });
    ```
    - Scripts are loaded as classic scripts by default, matching the IIFE build output.
    - The function deduplicates by URL (won't load the same script twice).
    - You can listen for a custom event when a script is loaded:
 
-      ```js
-      document.addEventListener('scriptLoaded:some-lib', (e) => {
-        // e.detail.url, e.detail.name, e.detail.scriptName
-        // Your code here
-      });
-      ```
+     ```js
+     document.addEventListener('scriptLoaded:some-lib', (e) => {
+       // e.detail.url, e.detail.name, e.detail.scriptName
+       // Your code here
+     });
+     ```
 
    - **Options:**
      - `placement`: `'head' | 'body'` (default: `'body'`)
@@ -88,6 +90,7 @@ The project will process and output the files mentioned in the `files` const of 
      ```js
      window.setScriptMode('cdn');
      ```
+
    This preference is saved in the browser's localStorage. If the local server is not running, it will automatically fall back to CDN.
 
 5. As you make changes to your code locally and save, the [localhost:3000](http://localhost:3000) server will serve those files.
