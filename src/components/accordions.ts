@@ -1,3 +1,5 @@
+const DEFAULT_OPEN_ATTRIBUTE = 'data-accordion-open';
+const DEFAULT_OPEN_PARENT_SELECTOR = `[${DEFAULT_OPEN_ATTRIBUTE}]`;
 const ITEM_SELECTOR = 'details:not([data-accordion="false"])';
 const TOGGLE_SELECTOR = 'summary';
 const CONTENT_SELECTOR = 'summary + div';
@@ -8,7 +10,22 @@ const ANIMATION_DURATION_IN_MS = 300;
  */
 const CLOSE_OTHER_ACCORDIONS = true;
 
+export function openDefaultAccordion(parent: HTMLElement) {
+  const defaultOpenValue = parent.getAttribute(DEFAULT_OPEN_ATTRIBUTE);
+  if (defaultOpenValue === null) return;
+
+  const parsedIndex = Number.parseInt(defaultOpenValue, 10);
+  const itemIndex = Number.isInteger(parsedIndex) && parsedIndex > 0 ? parsedIndex - 1 : 0;
+  const accordions = parent.querySelectorAll<HTMLDetailsElement>(ITEM_SELECTOR);
+
+  if (accordions[itemIndex]) accordions[itemIndex].open = true;
+}
+
 export function animatedDetailsAccordions() {
+  document
+    .querySelectorAll<HTMLElement>(DEFAULT_OPEN_PARENT_SELECTOR)
+    .forEach(openDefaultAccordion);
+
   const accordionsList = document.querySelectorAll<HTMLDetailsElement>(ITEM_SELECTOR);
   accordionsList.forEach((accordion) => {
     const accordionToggleEl = accordion.querySelector(TOGGLE_SELECTOR);
