@@ -1,4 +1,5 @@
 import { animatedDetailsAccordions } from '$components/accordions';
+import { initDetailsGroups } from '$components/details';
 import Dialog from '$components/dialog';
 import { initLightboxGalleries, initLightboxes } from '$components/lightbox';
 import { initNav } from '$components/nav';
@@ -42,6 +43,7 @@ function UIFunctions() {
   initLightboxes();
   initLightboxGalleries();
   initRevealFallback();
+  initDetailsGroups();
   animatedDetailsAccordions();
   initNav();
   window.conditionalLoadScript('[data-slider-el="component"]', 'components/slider.js');
