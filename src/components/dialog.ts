@@ -35,6 +35,23 @@ export function runDialogCommand(
   }
 }
 
+export function runDialogButtonCommand(
+  dialogEl: HTMLDialogElement,
+  source: HTMLButtonElement,
+  command: DialogCommand
+) {
+  const commandEvent = new Event('command', { cancelable: true });
+  Object.defineProperties(commandEvent, {
+    command: { value: command },
+    source: { value: source },
+  });
+
+  if (!dialogEl.dispatchEvent(commandEvent) || !dialogEl.isConnected) return;
+
+  const returnValue = source.hasAttribute('value') ? source.value : undefined;
+  runDialogCommand(dialogEl, command, returnValue);
+}
+
 /**
  * Native-first dialog controls.
  * Polyfills invoker commands and temporarily supports legacy data-dialog attributes.
@@ -62,7 +79,7 @@ class Dialog {
       const dialogEl = this.findDialog(commandButton.getAttribute('commandfor'));
 
       if (dialogEl && isDialogCommand(command)) {
-        runDialogCommand(dialogEl, command, commandButton.value);
+        runDialogButtonCommand(dialogEl, commandButton, command);
       }
       return;
     }
@@ -73,14 +90,13 @@ class Dialog {
 
     if (!legacyTrigger) return;
 
-    event.preventDefault();
-
     const openId = legacyTrigger.getAttribute('data-dialog-open');
     const closeId = legacyTrigger.getAttribute('data-dialog-close');
     const dialogEl = this.findDialog(openId || closeId);
 
     if (!dialogEl) return;
 
+    event.preventDefault();
     runDialogCommand(dialogEl, openId ? 'show-modal' : 'close');
   };
 
