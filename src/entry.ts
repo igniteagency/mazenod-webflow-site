@@ -19,14 +19,11 @@ export interface ScriptOptions {
   [key: string]: unknown;
 }
 
-function getProductionBase(branch = '') {
-  const branchPrefix = '' === branch ? '' : `@${branch}`;
-  return `https://cdn.jsdelivr.net/gh/igniteagency/mazenod-webflow-site${branchPrefix}/dist/prod/`;
+function getProductionBase() {
+  return 'https://cdn.jsdelivr.net/gh/igniteagency/mazenod-webflow-site/dist/prod/';
 }
 
-window.PRODUCTION_BASE = !window.location.hostname.includes('webflow.io')
-  ? getProductionBase()
-  : getProductionBase('dev');
+window.PRODUCTION_BASE = getProductionBase();
 
 function getScriptBase() {
   return window.SCRIPTS_ENV === 'local' ? LOCAL_SERVER : window.PRODUCTION_BASE;

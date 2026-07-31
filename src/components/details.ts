@@ -1,5 +1,3 @@
-const DETAILS_GROUP_SELECTOR = '[data-details-group]';
-
 let detailsGroupIndex = 0;
 
 function getDetailsGroupName(group: HTMLElement) {
@@ -21,6 +19,13 @@ export function initDetailsGroup(group: HTMLElement, supportsDetailsName = true)
     details.setAttribute('data-accordion', 'false');
   });
 
+  if (
+    group.classList.contains('tabbed-content_tabs') &&
+    !Array.from(detailsList).some((details) => details.open)
+  ) {
+    detailsList[0].open = true;
+  }
+
   if (!supportsDetailsName) {
     detailsList.forEach((details) => {
       details.addEventListener('toggle', () => {
@@ -32,24 +37,22 @@ export function initDetailsGroup(group: HTMLElement, supportsDetailsName = true)
       });
     });
   }
-
-  const defaultOpen = group.getAttribute('data-accordion-open');
-  if (defaultOpen === null) return;
-
-  const parsedIndex = Number.parseInt(defaultOpen, 10);
-  const requestedIndex = Number.isInteger(parsedIndex) && parsedIndex > 0 ? parsedIndex - 1 : 0;
-  const openIndex = Math.min(requestedIndex, detailsList.length - 1);
-
-  detailsList.forEach((details, index) => {
-    details.open = index === openIndex;
-  });
 }
 
 export function initDetailsGroups(
   root: ParentNode = document,
   supportsDetailsName = 'name' in document.createElement('details')
 ) {
-  root
-    .querySelectorAll<HTMLElement>(DETAILS_GROUP_SELECTOR)
-    .forEach((group) => initDetailsGroup(group, supportsDetailsName));
+  const groups = new Set<HTMLElement>();
+
+  root.querySelectorAll<HTMLDetailsElement>('details').forEach((details) => {
+    const group = details.parentElement;
+    if (!group || groups.has(group)) return;
+    if (group.getAttribute('data-details-group') === 'false') return;
+    if (group.querySelectorAll(':scope > details').length < 2) return;
+
+    groups.add(group);
+  });
+
+  groups.forEach((group) => initDetailsGroup(group, supportsDetailsName));
 }

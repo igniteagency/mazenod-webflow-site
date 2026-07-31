@@ -23,25 +23,30 @@ function createDetail() {
   };
 }
 
-function createGroup(itemCount = 3, defaultOpen = null, ownerDocument = null) {
+function createGroup(itemCount = 3, defaultOpen = null, ownerDocument = null, classNames = []) {
   const items = Array.from({ length: itemCount }, createDetail);
   const attributes = new Map();
-
-  return {
-    items,
-    group: {
-      ownerDocument,
-      getAttribute: (name) => {
-        if (name === 'data-accordion-open') return defaultOpen;
-        return attributes.get(name) ?? null;
-      },
-      querySelectorAll: (selector) => {
-        assert.equal(selector, ':scope > details');
-        return items;
-      },
-      setAttribute: (name, value) => attributes.set(name, value),
+  const group = {
+    classList: {
+      contains: (className) => classNames.includes(className),
     },
+    ownerDocument,
+    getAttribute: (name) => {
+      if (name === 'data-accordion-open') return defaultOpen;
+      return attributes.get(name) ?? null;
+    },
+    querySelectorAll: (selector) => {
+      assert.equal(selector, ':scope > details');
+      return items;
+    },
+    setAttribute: (name, value) => attributes.set(name, value),
   };
+
+  items.forEach((item) => {
+    item.parentElement = group;
+  });
+
+  return { group, items };
 }
 
 test('assigns one unique native name to each details group', () => {
@@ -94,14 +99,26 @@ test('skips names already used in the owning document', () => {
   );
 });
 
-test('clamps the configured default open index to the final details item', () => {
-  const { group, items } = createGroup(3, '12');
+test('ignores the Designer-only default index and preserves authored open state', () => {
+  const { group, items } = createGroup(3, '3');
+  items[1].open = true;
 
   initDetailsGroup(group, true);
 
   assert.deepEqual(
     items.map(({ open }) => open),
-    [false, false, true]
+    [false, true, false]
+  );
+});
+
+test('opens the first tab when no tabbed-content sibling is authored open', () => {
+  const { group, items } = createGroup(3, null, null, ['tabbed-content_tabs']);
+
+  initDetailsGroup(group, true);
+
+  assert.deepEqual(
+    items.map(({ open }) => open),
+    [true, false, false]
   );
 });
 
@@ -119,13 +136,28 @@ test('polyfills exclusive opening within an unsupported details group', () => {
   );
 });
 
-test('initialises every declarative details group under a root', () => {
+test('skips a sibling group with the explicit opt-out', () => {
+  const skipped = createGroup();
+  skipped.group.setAttribute('data-details-group', 'false');
+  const root = {
+    querySelectorAll: () => skipped.items,
+  };
+
+  initDetailsGroups(root, true);
+
+  assert.equal(
+    skipped.items.every((item) => !item.attributes.has('name')),
+    true
+  );
+});
+
+test('initialises every parent containing direct sibling details', () => {
   const first = createGroup();
   const second = createGroup();
   const root = {
     querySelectorAll: (selector) => {
-      assert.equal(selector, '[data-details-group]');
-      return [first.group, second.group];
+      assert.equal(selector, 'details');
+      return [...first.items, ...second.items];
     },
   };
 
