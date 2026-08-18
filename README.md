@@ -77,6 +77,55 @@ The project will process and output the files mentioned in the `files` const of 
 
    **Do not use the old `window.JS_SCRIPTS` set or batch loading. Use `window.loadScript` for all dynamic script loading.**
 
+### Native video player
+
+`global.js` conditionally loads `components/video-player.js` when a page contains a native video component. The native `<video>` attributes remain the source of truth for sources, poster, preload, muted, loop, and playsinline. Enabled hover/in-view modes take ownership of autoplay timing so a video cannot start outside its configured automatic-playback conditions.
+
+```html
+<div
+  data-video-el="component"
+  data-video-inview="true"
+  data-video-hover="true"
+  data-video-exclusive="true"
+>
+  <video
+    data-video-el="player"
+    muted
+    playsinline
+    loop
+    preload="metadata"
+    poster="/images/video-poster.webp"
+  >
+    <source src="/video/example.webm" type="video/webm" />
+    <source src="/video/example.mp4" type="video/mp4" />
+  </video>
+
+  <button type="button" data-video-el="toggle" aria-label="Play video">
+    <span data-video-el="play-icon" aria-hidden="true">Play</span>
+    <span data-video-el="pause-icon" aria-hidden="true" hidden>Pause</span>
+  </button>
+</div>
+```
+
+- `data-video-inview="true"` opts a muted, playsinline video into play-in-view and pause-out-of-view behaviour.
+- `data-video-hover="true"` opts a muted video into hover playback on fine-pointer devices.
+- `data-video-exclusive="true"` pauses other managed exclusive videos when this one starts.
+- Use a native `<button type="button">` for `data-video-el="toggle"` so keyboard behaviour is provided by the browser.
+- When hover and in-view playback are both enabled, the video remains active while either condition is true.
+- Automatic playback—including an authored native `autoplay` attribute on a managed component—is disabled for people who prefer reduced motion; manual controls continue to work.
+- Playback state is exposed as `data-video-state="paused|playing|ended|error"` on the component.
+- The optional toggle label and play/pause icons follow actual native media events.
+- The script never unmutes or seeks the video automatically.
+
+If site CSS overrides the browser's native `[hidden]` behaviour, add this narrowly scoped fallback:
+
+```css
+[data-video-el='play-icon'][hidden],
+[data-video-el='pause-icon'][hidden] {
+  display: none !important;
+}
+```
+
 3. Whilst working locally, run `bun run dev` to start a development server on [localhost:3000](http://localhost:3000)
    - Alternatively, `pnpm run dev` or `npm run dev`
 

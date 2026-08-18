@@ -44,6 +44,7 @@ function UIFunctions() {
   initRevealFallback();
   initDetailsGroups();
   initNav();
+  window.conditionalLoadScript('[data-video-el="component"]', 'components/video-player.js');
   window.conditionalLoadScript('[data-slider-el="component"]', 'components/slider.js');
   window.conditionalLoadScript(
     '[data-history-timeline="component"], .history-timeline_component',
