@@ -1,6 +1,7 @@
 import { initDetailsGroups } from '$components/details';
 import Dialog from '$components/dialog';
 import { initLightboxGalleries, initLightboxes } from '$components/lightbox';
+import { initMarquees } from '$components/marquee';
 import { initNav } from '$components/nav';
 import { initNewsletter } from '$components/newsletter';
 import { setCurrentYear } from '$utils/current-year';
@@ -8,7 +9,6 @@ import '$utils/disable-webflow-scroll';
 import { disableWebflowAnchorSmoothScroll } from '$utils/disable-webflow-scroll';
 import handleExternalLinks from '$utils/external-link';
 import addMainElementId from '$utils/main-element-id';
-import { duplicateMarqueeList } from '$utils/marquee-list';
 import { initRevealFallback } from '$utils/reveal-fallback';
 import { setSearchResultTextFromQuery } from '$utils/search-query-text';
 
@@ -37,7 +37,7 @@ function initComponents() {
 }
 
 function UIFunctions() {
-  duplicateMarqueeList();
+  initMarquees();
   initNewsletter();
   initLightboxes();
   initLightboxGalleries();
