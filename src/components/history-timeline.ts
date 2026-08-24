@@ -15,6 +15,11 @@ const YEAR_TEXT_SELECTOR = '[data-history-year], .history-timeline_slide-overlay
 const LIGHTBOX_GALLERY_SELECTOR = '[data-lightbox-gallery]';
 const LIGHTBOX_TEMPLATE_SELECTOR = '[data-lightbox-template], [data-newsletter-lightbox-template]';
 const IMAGE_SELECTOR = '.history-timeline_slide-image';
+const READ_MORE_SELECTOR = '[data-history-timeline="read-more"]';
+const READ_MORE_TEXT_SELECTOR = '[data-history-timeline="read-more-text"]';
+const READ_MORE_LABEL_SELECTOR = '.button_text';
+const READ_MORE_STYLES_ID = 'history-timeline-read-more-styles';
+const READ_MORE_LINE_COUNT = 4;
 const SWIPER_JS_URL = 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js';
 const DEFAULT_SWIPER_SPEED_IN_MS = 700;
 const DEFAULT_IMAGE_ROTATION_DELAY_IN_MS = 3500;
@@ -86,6 +91,7 @@ class HistoryTimeline {
     this.buildYearNavigation(navWrapperEl);
     this.initNavigationEvents(navWrapperEl);
     this.initLightboxGalleries();
+    this.initReadMoreControls();
     this.initImageStates();
     this.initSwipers(mainSwiperEl, navSwiperEl);
     this.navDisplayIndex = 0;
@@ -175,6 +181,27 @@ class HistoryTimeline {
         });
       });
     });
+  }
+
+  private initReadMoreControls() {
+    const updateControls = Array.from(
+      this.component.querySelectorAll<HTMLElement>(READ_MORE_SELECTOR)
+    )
+      .map((toggle) => initReadMoreControl(toggle))
+      .filter((update): update is () => void => Boolean(update));
+
+    if (!updateControls.length) return;
+
+    let resizeFrame = 0;
+    const updateAll = () => updateControls.forEach((update) => update());
+    const scheduleUpdate = () => {
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(updateAll);
+    };
+
+    scheduleUpdate();
+    document.fonts?.ready.then(scheduleUpdate);
+    window.addEventListener('resize', scheduleUpdate);
   }
 
   private initImageStates() {
@@ -379,6 +406,87 @@ function setNavSlideYear(navSlide: HTMLElement, year: string) {
   navSlide.textContent = year;
 }
 
+let readMoreId = 0;
+
+function initReadMoreControl(toggle: HTMLElement) {
+  const button =
+    toggle instanceof HTMLButtonElement
+      ? toggle
+      : toggle.querySelector<HTMLButtonElement>('button');
+  if (!button || button.dataset.historyReadMoreInitialised === 'true') return null;
+
+  const slide = button.closest<HTMLElement>(MAIN_SLIDE_SELECTOR);
+  const container = button.closest<HTMLElement>('.button_component') || button;
+  const explicitText = slide?.querySelector<HTMLElement>(READ_MORE_TEXT_SELECTOR);
+  const text = explicitText || container.previousElementSibling;
+  if (!(text instanceof HTMLElement)) {
+    console.warn('Skipping history read more control without adjacent text', button);
+    return null;
+  }
+
+  const label = button.querySelector<HTMLElement>(READ_MORE_LABEL_SELECTOR);
+  const collapsedLabel = label?.textContent?.trim() || 'Read more';
+  const expandedLabel = button.dataset.historyReadMoreExpandedLabel?.trim() || 'Read less';
+
+  readMoreId += 1;
+  text.id ||= `history-read-more-${readMoreId}`;
+  text.dataset.historyReadMoreText = 'true';
+  container.dataset.historyReadMoreContainer = 'true';
+  button.dataset.historyReadMoreInitialised = 'true';
+  button.type = 'button';
+  button.setAttribute('aria-controls', text.id);
+
+  const setExpanded = (expanded: boolean) => {
+    text.dataset.historyReadMoreExpanded = String(expanded);
+    button.setAttribute('aria-expanded', String(expanded));
+    button.setAttribute('aria-label', expanded ? expandedLabel : collapsedLabel);
+    if (label) label.textContent = expanded ? expandedLabel : collapsedLabel;
+  };
+
+  setExpanded(false);
+  button.addEventListener('click', () => {
+    setExpanded(button.getAttribute('aria-expanded') !== 'true');
+  });
+
+  return () => {
+    const wasExpanded = button.getAttribute('aria-expanded') === 'true';
+    setExpanded(false);
+    container.hidden = false;
+
+    const isOverflowing = text.scrollHeight > text.clientHeight + 1;
+    container.hidden = !isOverflowing;
+    setExpanded(isOverflowing && wasExpanded);
+  };
+}
+
+function addReadMoreStyles() {
+  if (document.getElementById(READ_MORE_STYLES_ID)) return;
+
+  const style = document.createElement('style');
+  style.id = READ_MORE_STYLES_ID;
+  style.textContent = `
+    [data-history-read-more-text="true"] {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: ${READ_MORE_LINE_COUNT};
+      line-clamp: ${READ_MORE_LINE_COUNT};
+      overflow: hidden;
+    }
+
+    [data-history-read-more-text="true"][data-history-read-more-expanded="true"] {
+      display: block;
+      -webkit-line-clamp: unset;
+      line-clamp: unset;
+      overflow: visible;
+    }
+
+    [data-history-read-more-container="true"][hidden] {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function hasHistoryTimeline() {
   return Boolean(document.querySelector(COMPONENT_SELECTOR));
 }
@@ -392,6 +500,7 @@ function isSwiperReady() {
 function initHistoryTimeline() {
   if (!hasHistoryTimeline() || !isSwiperReady()) return;
 
+  addReadMoreStyles();
   document
     .querySelectorAll<HTMLElement>(COMPONENT_SELECTOR)
     .forEach((component) => new HistoryTimeline(component).init());

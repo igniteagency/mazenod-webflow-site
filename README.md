@@ -126,6 +126,34 @@ If site CSS overrides the browser's native `[hidden]` behaviour, add this narrow
 }
 ```
 
+### History timeline read more
+
+Add this attribute to the existing **button element** directly below each history paragraph:
+
+```text
+data-history-timeline = read-more
+```
+
+The timeline script then:
+
+- limits the immediately preceding paragraph to four lines by default;
+- hides the complete Webflow button wrapper when the paragraph fits within four lines;
+- expands and collapses longer paragraphs;
+- changes the `.button_text` label between `Read more` and `Read less`;
+- adds `aria-expanded`, `aria-controls`, and an accessible label automatically.
+
+If the paragraph is not immediately before the button's `.button_component` wrapper, mark the intended paragraph explicitly with:
+
+```text
+data-history-timeline = read-more-text
+```
+
+To override the expanded label, add this optional attribute to the button:
+
+```text
+data-history-read-more-expanded-label = Show less
+```
+
 3. Whilst working locally, run `bun run dev` to start a development server on [localhost:3000](http://localhost:3000)
    - Alternatively, `pnpm run dev` or `npm run dev`
 
