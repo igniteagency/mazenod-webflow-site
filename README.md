@@ -141,7 +141,11 @@ The timeline script then:
 - smoothly expands and collapses longer paragraphs, with reduced-motion support;
 - changes the `.button_text` label between `Read more` and `Read less`;
 - adds `aria-expanded`, `aria-controls`, and an accessible label automatically;
-- keeps both timeline arrows inside the navigation row and starts the generated year rail on its middle copy so it can loop in either direction.
+- starts the generated year rail on its middle copy so it can loop in either direction.
+
+Keep the rail sizing in Webflow. On `.history-timeline_nav-swiper`, use `width: 0`,
+`min-width: 0`, and `flex: 1 1 auto` so the rail fills only the space between the two fixed
+navigation buttons instead of pushing the next button outside the clipped navigation row.
 
 If the paragraph is not immediately before the button's `.button_component` wrapper, mark the intended paragraph explicitly with:
 

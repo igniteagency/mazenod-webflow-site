@@ -68,12 +68,6 @@
       display: none !important;
     }
 
-    .section_history-timeline .history-timeline_nav-swiper.swiper {
-      width: 0;
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-
     @media (prefers-reduced-motion: reduce) {
       [data-history-read-more-text="true"] {
         transition: none;
