@@ -24,8 +24,6 @@ const READ_MORE_TRANSITION_DURATION_IN_MS = 400;
 const SWIPER_JS_URL = 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js';
 const DEFAULT_SWIPER_SPEED_IN_MS = 700;
 const DEFAULT_IMAGE_ROTATION_DELAY_IN_MS = 3500;
-const NAV_LOOP_COPY_COUNT = 3;
-const NAV_LOOP_MIDDLE_COPY_INDEX = 1;
 const INITIALISED_ATTRIBUTE = 'historyTimelineInitialised';
 const ACTIVE_CLASS = 'is-active';
 const PREVIOUS_CLASS = 'is-previous';
@@ -59,8 +57,6 @@ class HistoryTimeline {
   private mainSwiper: SwiperInstance | null = null;
   private navSwiper: SwiperInstance | null = null;
   private imageRotationTimer: number | null = null;
-  private navResetTimer: number | null = null;
-  private navDisplayIndex = 0;
 
   constructor(component: HTMLElement) {
     this.component = component;
@@ -95,7 +91,6 @@ class HistoryTimeline {
     this.initReadMoreControls();
     this.initImageStates();
     this.initSwipers(mainSwiperEl, navSwiperEl);
-    this.navDisplayIndex = this.getMiddleNavDisplayIndex(0);
     this.syncToSlide(0, 0);
   }
 
@@ -113,19 +108,14 @@ class HistoryTimeline {
   private buildYearNavigation(navWrapperEl: HTMLElement) {
     const template = navWrapperEl.querySelector<HTMLElement>(NAV_TEMPLATE_SELECTOR);
 
-    const navSlides = Array.from({ length: NAV_LOOP_COPY_COUNT }).flatMap((_, copyIndex) =>
-      this.slides.map((slide, index) => this.createNavSlide(slide.year, index, template, copyIndex))
+    const navSlides = this.slides.map((slide, index) =>
+      this.createNavSlide(slide.year, index, template)
     );
 
     navWrapperEl.replaceChildren(...navSlides);
   }
 
-  private createNavSlide(
-    year: string,
-    index: number,
-    template: HTMLElement | null,
-    copyIndex: number
-  ) {
+  private createNavSlide(year: string, index: number, template: HTMLElement | null) {
     const navSlide = template
       ? (template.cloneNode(true) as HTMLElement)
       : document.createElement('button');
@@ -134,7 +124,6 @@ class HistoryTimeline {
     navSlide.removeAttribute('data-history-timeline');
     navSlide.dataset.historyYear = year;
     navSlide.dataset.historyIndex = String(index);
-    navSlide.dataset.historyCopy = String(copyIndex);
     navSlide.setAttribute('role', 'button');
     navSlide.setAttribute('tabindex', '0');
     navSlide.setAttribute('aria-label', `Go to ${year}`);
@@ -217,7 +206,7 @@ class HistoryTimeline {
     const navNextButtonEl = this.section.querySelector<HTMLElement>(NAV_NEXT_BUTTON_SELECTOR);
 
     this.navSwiper = new Swiper(navSwiperEl, {
-      loop: false,
+      loop: true,
       slidesPerView: 'auto',
       centeredSlides: false,
       slideToClickedSlide: false,
@@ -260,8 +249,7 @@ class HistoryTimeline {
   private syncMainToNav() {
     if (!this.navSwiper || !this.mainSwiper || !this.slides.length) return;
 
-    const index = this.getLogicalNavIndex(this.navSwiper.activeIndex);
-    this.navDisplayIndex = this.navSwiper.activeIndex;
+    const index = this.navSwiper.realIndex;
     this.updateNavState(index);
 
     if (this.mainSwiper.realIndex === index) return;
@@ -284,58 +272,12 @@ class HistoryTimeline {
   private syncNavRail(index: number, speed: number) {
     if (!this.navSwiper || !this.slides.length) return;
 
-    if (this.navResetTimer) {
-      window.clearTimeout(this.navResetTimer);
-      this.navResetTimer = null;
+    if (this.navSwiper.slideToLoop) {
+      this.navSwiper.slideToLoop(index, speed);
+      return;
     }
 
-    const currentLogicalIndex = this.getLogicalNavIndex(this.navDisplayIndex);
-    const crossesLoopBoundary = Math.abs(index - currentLogicalIndex) > this.slides.length / 2;
-    if (crossesLoopBoundary) {
-      this.navDisplayIndex = this.getMiddleNavDisplayIndex(currentLogicalIndex);
-      this.navSwiper.slideTo(this.navDisplayIndex, 0, false);
-    }
-
-    const targetIndex = this.getClosestNavDisplayIndex(index);
-    this.navDisplayIndex = targetIndex;
-    this.navSwiper.slideTo(targetIndex, speed, false);
-
-    const middleIndex = this.getMiddleNavDisplayIndex(index);
-    if (!crossesLoopBoundary || targetIndex === middleIndex) return;
-
-    this.navResetTimer = window.setTimeout(
-      () => {
-        this.navDisplayIndex = middleIndex;
-        this.navSwiper?.slideTo(middleIndex, 0, false);
-        this.navResetTimer = null;
-      },
-      Math.max(speed, 0) + 50
-    );
-  }
-
-  private getClosestNavDisplayIndex(index: number) {
-    const slideCount = this.slides.length;
-    const candidates = Array.from(
-      { length: NAV_LOOP_COPY_COUNT },
-      (_, copyIndex) => copyIndex * slideCount + index
-    );
-
-    return candidates.reduce((closestIndex, candidateIndex) =>
-      Math.abs(candidateIndex - this.navDisplayIndex) <
-      Math.abs(closestIndex - this.navDisplayIndex)
-        ? candidateIndex
-        : closestIndex
-    );
-  }
-
-  private getMiddleNavDisplayIndex(index: number) {
-    return NAV_LOOP_MIDDLE_COPY_INDEX * this.slides.length + index;
-  }
-
-  private getLogicalNavIndex(displayIndex: number) {
-    if (!this.slides.length) return 0;
-
-    return ((displayIndex % this.slides.length) + this.slides.length) % this.slides.length;
+    this.navSwiper.slideTo(index, speed, false);
   }
 
   private updateNavState(activeIndex: number) {
