@@ -20,6 +20,7 @@ const READ_MORE_TEXT_SELECTOR = '[data-history-timeline="read-more-text"]';
 const READ_MORE_LABEL_SELECTOR = '.button_text';
 const READ_MORE_STYLES_ID = 'history-timeline-read-more-styles';
 const READ_MORE_LINE_COUNT = 4;
+const READ_MORE_TRANSITION_DURATION_IN_MS = 400;
 const SWIPER_JS_URL = 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js';
 const DEFAULT_SWIPER_SPEED_IN_MS = 700;
 const DEFAULT_IMAGE_ROTATION_DELAY_IN_MS = 3500;
@@ -94,7 +95,7 @@ class HistoryTimeline {
     this.initReadMoreControls();
     this.initImageStates();
     this.initSwipers(mainSwiperEl, navSwiperEl);
-    this.navDisplayIndex = 0;
+    this.navDisplayIndex = this.getMiddleNavDisplayIndex(0);
     this.syncToSlide(0, 0);
   }
 
@@ -427,6 +428,9 @@ function initReadMoreControl(toggle: HTMLElement) {
   const label = button.querySelector<HTMLElement>(READ_MORE_LABEL_SELECTOR);
   const collapsedLabel = label?.textContent?.trim() || 'Read more';
   const expandedLabel = button.dataset.historyReadMoreExpandedLabel?.trim() || 'Read less';
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let collapsedHeight = 0;
+  let transitionTimer = 0;
 
   readMoreId += 1;
   text.id ||= `history-read-more-${readMoreId}`;
@@ -436,24 +440,64 @@ function initReadMoreControl(toggle: HTMLElement) {
   button.type = 'button';
   button.setAttribute('aria-controls', text.id);
 
-  const setExpanded = (expanded: boolean) => {
-    text.dataset.historyReadMoreExpanded = String(expanded);
+  const setButtonState = (expanded: boolean) => {
     button.setAttribute('aria-expanded', String(expanded));
     button.setAttribute('aria-label', expanded ? expandedLabel : collapsedLabel);
     if (label) label.textContent = expanded ? expandedLabel : collapsedLabel;
   };
 
+  const setExpanded = (expanded: boolean) => {
+    text.dataset.historyReadMoreExpanded = String(expanded);
+    setButtonState(expanded);
+  };
+
   setExpanded(false);
   button.addEventListener('click', () => {
-    setExpanded(button.getAttribute('aria-expanded') !== 'true');
+    const expand = button.getAttribute('aria-expanded') !== 'true';
+    window.clearTimeout(transitionTimer);
+
+    if (prefersReducedMotion || !collapsedHeight) {
+      text.style.maxHeight = '';
+      text.style.overflow = '';
+      setExpanded(expand);
+      return;
+    }
+
+    const startHeight = text.getBoundingClientRect().height;
+    text.style.maxHeight = `${startHeight}px`;
+    text.style.overflow = 'hidden';
+
+    if (expand) {
+      setExpanded(true);
+    } else {
+      setButtonState(false);
+    }
+
+    const endHeight = expand ? text.scrollHeight : collapsedHeight;
+    text.getBoundingClientRect();
+    window.requestAnimationFrame(() => {
+      text.style.maxHeight = `${endHeight}px`;
+    });
+
+    transitionTimer = window.setTimeout(() => {
+      if (!expand) text.dataset.historyReadMoreExpanded = 'false';
+      text.style.maxHeight = '';
+      text.style.overflow = '';
+      transitionTimer = 0;
+    }, READ_MORE_TRANSITION_DURATION_IN_MS);
   });
 
   return () => {
     const wasExpanded = button.getAttribute('aria-expanded') === 'true';
+    window.clearTimeout(transitionTimer);
+    transitionTimer = 0;
+    text.style.maxHeight = '';
+    text.style.overflow = '';
     setExpanded(false);
     container.hidden = false;
 
     const isOverflowing = text.scrollHeight > text.clientHeight + 1;
+    collapsedHeight = text.clientHeight;
     container.hidden = !isOverflowing;
     setExpanded(isOverflowing && wasExpanded);
   };
@@ -471,6 +515,7 @@ function addReadMoreStyles() {
       -webkit-line-clamp: ${READ_MORE_LINE_COUNT};
       line-clamp: ${READ_MORE_LINE_COUNT};
       overflow: hidden;
+      transition: max-height ${READ_MORE_TRANSITION_DURATION_IN_MS}ms cubic-bezier(0.19, 1, 0.22, 1);
     }
 
     [data-history-read-more-text="true"][data-history-read-more-expanded="true"] {
@@ -482,6 +527,18 @@ function addReadMoreStyles() {
 
     [data-history-read-more-container="true"][hidden] {
       display: none !important;
+    }
+
+    .section_history-timeline .history-timeline_nav-swiper.swiper {
+      width: 0;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-history-read-more-text="true"] {
+        transition: none;
+      }
     }
   `;
   document.head.appendChild(style);

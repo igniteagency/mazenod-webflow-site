@@ -138,9 +138,10 @@ The timeline script then:
 
 - limits the immediately preceding paragraph to four lines by default;
 - hides the complete Webflow button wrapper when the paragraph fits within four lines;
-- expands and collapses longer paragraphs;
+- smoothly expands and collapses longer paragraphs, with reduced-motion support;
 - changes the `.button_text` label between `Read more` and `Read less`;
-- adds `aria-expanded`, `aria-controls`, and an accessible label automatically.
+- adds `aria-expanded`, `aria-controls`, and an accessible label automatically;
+- keeps both timeline arrows inside the navigation row and starts the generated year rail on its middle copy so it can loop in either direction.
 
 If the paragraph is not immediately before the button's `.button_component` wrapper, mark the intended paragraph explicitly with:
 
