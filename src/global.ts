@@ -3,6 +3,7 @@ import Dialog from '$components/dialog';
 import { initLightboxGalleries, initLightboxes } from '$components/lightbox';
 import { initMarquees } from '$components/marquee';
 import { initNav } from '$components/nav';
+import { initNewsRichTextGalleries } from '$components/news-rich-text-gallery';
 import { initNewsletter } from '$components/newsletter';
 import { setCurrentYear } from '$utils/current-year';
 import '$utils/disable-webflow-scroll';
@@ -39,6 +40,7 @@ function initComponents() {
 function UIFunctions() {
   initMarquees();
   initNewsletter();
+  initNewsRichTextGalleries();
   initLightboxes();
   initLightboxGalleries();
   initRevealFallback();
