@@ -50,7 +50,7 @@ function addStyles() {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    .post-content_component.grid > .post-content_wrapper { grid-column: container-start / container-end; }
+    .post-content_component.grid > .post-content_wrapper { grid-column: container-start / container-end; width: 100%; }
     [data-news-gallery-rich-text] > figure { max-width: 780px; width: 100%; }
     [data-news-gallery-rich-text] figure img { height: auto; cursor: zoom-in; }
     [data-news-gallery-rich-text] .news-rich-text-gallery { display: grid; gap: 20px; margin: 24px 0; }
