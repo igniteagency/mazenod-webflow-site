@@ -30,6 +30,7 @@ type LightboxGalleryOptions = {
   overlayAttribute?: string;
   bodyOpenClass?: string;
   triggerImages?: boolean;
+  showCaption?: boolean;
 };
 
 export function initLightboxes(root: ParentNode = document) {
@@ -60,6 +61,7 @@ export function initLightboxGallery(options: LightboxGalleryOptions) {
     overlayAttribute = 'data-lightbox',
     bodyOpenClass = 'lightbox-open',
     triggerImages = true,
+    showCaption = true,
   } = options;
 
   if (root.dataset[initialisedKey] === 'true') return;
@@ -96,6 +98,7 @@ export function initLightboxGallery(options: LightboxGalleryOptions) {
   lightbox.setAttribute('aria-modal', 'true');
   lightbox.setAttribute('aria-label', label);
   lightbox.setAttribute('aria-hidden', 'true');
+  if (!showCaption) lightbox.querySelector('[data-lightbox-caption]')?.remove();
 
   if (template) {
     lightbox.style.removeProperty('display');

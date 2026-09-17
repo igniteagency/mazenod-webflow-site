@@ -39,6 +39,7 @@ export function initNewsRichTextGalleries() {
       root: richText,
       label: 'News article images',
       overlayAttribute: 'data-news-lightbox',
+      showCaption: false,
     });
     richText.dataset.newsGalleryInitialised = 'true';
   });
@@ -51,6 +52,8 @@ function addStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     .post-content_component.grid > .post-content_wrapper { grid-column: container-start / container-end; width: 100%; }
+    .post-header_component .button_component:has(.button_link[aria-label="All posts"]) .icon_button { transform: translateX(0) !important; }
+    .post-header_component .button_component:has(.button_link[aria-label="All posts"]):hover .icon_button { transform: translateX(-.25rem) !important; }
     [data-news-gallery-rich-text] > figure { max-width: 780px; width: 100%; }
     [data-news-gallery-rich-text] figure img { height: auto; cursor: zoom-in; }
     [data-news-gallery-rich-text] .news-rich-text-gallery { display: grid; gap: 20px; margin: 24px 0; }
