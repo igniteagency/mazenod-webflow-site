@@ -52,6 +52,10 @@ function UIFunctions() {
     '[data-history-timeline="component"], .history-timeline_component',
     'components/history-timeline.js'
   );
+  window.conditionalLoadScript(
+    '[data-el="switching-tabs-component"], .switcing-tabs_component, .switching-tabs_component',
+    'components/switching-tabs.js'
+  );
 }
 
 function webflowOverrides() {
