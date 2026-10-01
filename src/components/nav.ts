@@ -228,7 +228,6 @@ export function initNav() {
 
     let previousScrollY = window.scrollY;
     let isTicking = false;
-    let transparentTimeoutId: number | null = null;
 
     const updateNavState = () => {
       const currentScrollY = window.scrollY;
@@ -244,27 +243,8 @@ export function initNav() {
         isHiding,
       });
 
-      if (transparentTimeoutId !== null) {
-        window.clearTimeout(transparentTimeoutId);
-        transparentTimeoutId = null;
-      }
-
       navbarWrapperEl.classList.toggle(HIDDEN_CLASS, isHiding);
-
-      if (!isPastThreshold) {
-        navbarComponentEl.classList.add(TRANSPARENT_CLASS);
-      } else {
-        if (isHiding) {
-          // Delay removal of transparency while it slides out of view to avoid flash to white
-          transparentTimeoutId = window.setTimeout(() => {
-            navbarComponentEl.classList.remove(TRANSPARENT_CLASS);
-            transparentTimeoutId = null;
-          }, 400); // 400ms matches the slide-out transition duration
-        } else {
-          // If we are showing it (scrolling up), make it opaque immediately
-          navbarComponentEl.classList.remove(TRANSPARENT_CLASS);
-        }
-      }
+      navbarComponentEl.classList.toggle(TRANSPARENT_CLASS, !isPastThreshold);
 
       previousScrollY = currentScrollY;
       isTicking = false;
