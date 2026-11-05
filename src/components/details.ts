@@ -46,6 +46,11 @@ export function initDetailsGroups(
   const groups = new Set<HTMLElement>();
 
   root.querySelectorAll<HTMLDetailsElement>('details').forEach((details) => {
+    if (details.classList.contains('is-open')) {
+      details.open = true;
+      details.classList.remove('is-open');
+    }
+
     const group = details.parentElement;
     if (!group || groups.has(group)) return;
     if (group.getAttribute('data-details-group') === 'false') return;
