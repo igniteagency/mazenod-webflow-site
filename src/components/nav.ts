@@ -8,6 +8,7 @@ const NAV_MENU_BACK_SELECTOR =
 const WEBFLOW_NAV_BUTTON_SELECTOR = '.w-nav-button';
 const WEBFLOW_NAV_MENU_SELECTOR = '.w-nav-menu';
 const WEBFLOW_OPEN_CLASS = 'w--open';
+const POPOVER_SELECTOR = '[popover]';
 
 const HIDE_THRESHOLD = 100;
 const TABLET_BREAKPOINT = 991;
@@ -129,6 +130,7 @@ export function initNav() {
     const menuItemEls = Array.from(
       navbarWrapperEl.querySelectorAll<HTMLElement>(NAV_MENU_ITEM_SELECTOR)
     );
+    const popoverEls = Array.from(navbarWrapperEl.querySelectorAll<HTMLElement>(POPOVER_SELECTOR));
 
     const isMenuOpen = () => {
       const navButtonEl = navbarWrapperEl.querySelector<HTMLElement>(WEBFLOW_NAV_BUTTON_SELECTOR);
@@ -230,18 +232,21 @@ export function initNav() {
     let isTicking = false;
 
     const updateNavState = () => {
-      const currentScrollY = window.scrollY;
+      const currentScrollY = Math.max(
+        0,
+        Math.min(window.scrollY, document.documentElement.scrollHeight - window.innerHeight)
+      );
       const isPastThreshold = currentScrollY > HIDE_THRESHOLD;
-      const isScrollingDown = currentScrollY > previousScrollY;
-      const isHiding = isPastThreshold && isScrollingDown && !isMenuOpen();
-
-      console.debug('updateNavState firing:', {
-        currentScrollY,
-        previousScrollY,
-        isPastThreshold,
-        isScrollingDown,
-        isHiding,
-      });
+      const isScrollingDown =
+        currentScrollY > previousScrollY ||
+        (currentScrollY === previousScrollY && navbarWrapperEl.classList.contains(HIDDEN_CLASS));
+      const isPopoverOpen = popoverEls.some((popoverEl) => popoverEl.matches(':popover-open'));
+      const isHiding =
+        isPastThreshold &&
+        isScrollingDown &&
+        !isMenuOpen() &&
+        !isPopoverOpen &&
+        !navbarWrapperEl.matches(':focus-within');
 
       navbarWrapperEl.classList.toggle(HIDDEN_CLASS, isHiding);
       navbarComponentEl.classList.toggle(TRANSPARENT_CLASS, !isPastThreshold);
@@ -254,6 +259,10 @@ export function initNav() {
       updateBodyScrollLock();
       updateNavState();
     };
+
+    // Popovers already lock page scrolling through the component's CSS.
+    popoverEls.forEach((popoverEl) => popoverEl.addEventListener('toggle', updateNavState));
+    navbarWrapperEl.addEventListener('focusin', updateNavState);
 
     const webflowMenuEls = Array.from(
       navbarWrapperEl.querySelectorAll<HTMLElement>(
