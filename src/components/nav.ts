@@ -246,7 +246,7 @@ export function initNav() {
         isScrollingDown &&
         !isMenuOpen() &&
         !isPopoverOpen &&
-        !navbarWrapperEl.matches(':focus-within');
+        !navbarWrapperEl.querySelector(':focus-visible');
 
       navbarWrapperEl.classList.toggle(HIDDEN_CLASS, isHiding);
       navbarComponentEl.classList.toggle(TRANSPARENT_CLASS, !isPastThreshold);

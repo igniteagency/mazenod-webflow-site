@@ -9,6 +9,7 @@ function element() {
     dataset: {},
     style: {},
     focused: false,
+    pointerFocused: false,
     open: false,
     classList: {
       contains: (name) => classes.has(name),
@@ -17,7 +18,7 @@ function element() {
     querySelector: () => null,
     querySelectorAll: () => [],
     matches(selector) {
-      return selector === ':focus-within' ? this.focused : this.open;
+      return selector === ':focus-within' ? this.focused || this.pointerFocused : this.open;
     },
     addEventListener(name, listener) {
       listeners.set(name, [...(listeners.get(name) || []), listener]);
@@ -43,7 +44,11 @@ describe('navbar scrolling', () => {
     navbar = element();
     popover = element();
     frames = [];
-    wrapper.querySelector = (selector) => (selector === '.navbar_component' ? navbar : null);
+    wrapper.querySelector = (selector) => {
+      if (selector === '.navbar_component') return navbar;
+      if (selector === ':focus-visible' && wrapper.focused) return navbar;
+      return null;
+    };
     wrapper.querySelectorAll = (selector) => (selector === '[popover]' ? [popover] : []);
     globalThis.window = Object.assign(element(), {
       scrollY: 0,
@@ -107,6 +112,17 @@ describe('navbar scrolling', () => {
     expect(wrapper.classList.contains('is-hidden')).toBe(false);
     wrapper.focused = false;
     scrollTo(700);
+    expect(wrapper.classList.contains('is-hidden')).toBe(true);
+  });
+
+  test('scrolling resumes after closing the popover with a pointer click', () => {
+    scrollTo(450);
+    popover.open = true;
+    popover.emit('toggle');
+    wrapper.pointerFocused = true;
+    popover.open = false;
+    popover.emit('toggle');
+    scrollTo(650);
     expect(wrapper.classList.contains('is-hidden')).toBe(true);
   });
 
