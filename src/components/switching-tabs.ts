@@ -52,6 +52,7 @@ export class AutoRotatingTabs {
   }
 
   private init(): void {
+    this.pauseAutoRotation();
     this.setupEventListeners();
     this.openTabAtCurrentIndex();
 
@@ -74,6 +75,14 @@ export class AutoRotatingTabs {
   }
 
   private setupEventListeners(): void {
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (document.hidden) this.pauseAutoRotation();
+        else this.startAutoRotation();
+      },
+      { signal: this.abortController.signal }
+    );
     this.tabs.forEach((tab, index) => {
       const toggle = tab.querySelector('summary');
       if (!toggle) return;
@@ -99,7 +108,7 @@ export class AutoRotatingTabs {
         entries.forEach((entry) => {
           if (entry.target !== this.component) return;
 
-          this.isInView = entry.isIntersecting;
+          this.isInView = entry.isIntersecting && entry.intersectionRatio >= 0.1;
           if (this.isInView) {
             this.startAutoRotation();
           } else {
@@ -117,13 +126,19 @@ export class AutoRotatingTabs {
     this.tabs.forEach((tab, index) => {
       tab.open = index === this.currentTabIndex;
     });
-    this.startAutoRotation();
+    this.startAutoRotation(true);
   }
 
-  private startAutoRotation(): void {
-    if (!this.mediaQuery.matches || !this.isInView) return;
+  private startAutoRotation(restart = false): void {
+    if (!this.mediaQuery.matches || !this.isInView || document.hidden) {
+      this.pauseAutoRotation();
+      return;
+    }
+    if (this.intervalId !== null && !restart) return;
 
     this.pauseAutoRotation();
+    // Commit the stopped CSS animation before starting a fresh timer and progress bar.
+    void this.component.offsetWidth;
     this.component.classList.remove(OUT_OF_VIEW_CLASS);
     this.intervalId = window.setInterval(() => {
       this.currentTabIndex = (this.currentTabIndex + 1) % this.tabs.length;
@@ -132,7 +147,7 @@ export class AutoRotatingTabs {
   }
 
   private pauseAutoRotation(): void {
-    if (this.intervalId) {
+    if (this.intervalId !== null) {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
