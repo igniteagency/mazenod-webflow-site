@@ -156,6 +156,11 @@ export class AutoRotatingTabs {
 
   private pauseAutoRotation(): void {
     this.component.classList.add(OUT_OF_VIEW_CLASS);
+    this.component.getAnimations({ subtree: true }).forEach((animation) => {
+      if ('animationName' in animation && animation.animationName === PROGRESS_ANIMATION_NAME) {
+        animation.pause();
+      }
+    });
   }
 
   public destroy(): void {

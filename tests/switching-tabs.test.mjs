@@ -29,6 +29,9 @@ function setup(desktop = true) {
     animationName: 'loaderLine',
     currentTime: 6000,
     playState: 'finished',
+    pause() {
+      this.playState = 'paused';
+    },
     play() {
       this.playState = 'running';
     },
@@ -127,6 +130,7 @@ test('re-entry restarts a retained finished animation after off-screen rendering
   const s = setup();
   s.enter();
   s.enter(0);
+  expect(s.animation.playState).toBe('paused');
   s.animation.currentTime = 6000;
   s.animation.playState = 'finished';
   s.enter();
