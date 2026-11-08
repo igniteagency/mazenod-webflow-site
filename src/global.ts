@@ -46,6 +46,7 @@ function UIFunctions() {
   initRevealFallback();
   initDetailsGroups();
   initNav();
+  window.conditionalLoadScript('[data-el="counter"]', 'components/counter.js');
   window.conditionalLoadScript('[data-video-el="component"]', 'components/video-player.js');
   window.conditionalLoadScript('[data-slider-el="component"]', 'components/slider.js');
   window.conditionalLoadScript(
