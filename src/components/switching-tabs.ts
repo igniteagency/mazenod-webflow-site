@@ -5,30 +5,14 @@
 
 const SWITCHING_TABS_SELECTOR =
   '[data-el="switching-tabs-component"], .switcing-tabs_component, .switching-tabs_component';
-const AUTOPLAY_TIMER_CSS_VAR = '--autoplay-timer';
 const OUT_OF_VIEW_CLASS = 'is-out-of-view';
 const DESKTOP_MQ = '(min-width: 992px)';
-
-function getAutoplayMs(component: HTMLElement): number {
-  const timerValue = getComputedStyle(component).getPropertyValue(AUTOPLAY_TIMER_CSS_VAR).trim();
-
-  if (timerValue.endsWith('ms')) {
-    return parseFloat(timerValue) || 6000;
-  }
-
-  if (timerValue) {
-    return (parseFloat(timerValue) || 6) * 1000;
-  }
-
-  return 6000;
-}
+const PROGRESS_ANIMATION_NAME = 'loaderLine';
 
 export class AutoRotatingTabs {
   private component: HTMLElement;
   private tabs: HTMLDetailsElement[];
   private currentTabIndex = 0;
-  private intervalId: number | null = null;
-  private autoplayTimer: number;
   private intersectionObserver?: IntersectionObserver;
   private isInView = false;
   private mediaQuery: MediaQueryList;
@@ -39,7 +23,6 @@ export class AutoRotatingTabs {
     this.component = component;
     this.mediaQuery = window.matchMedia(DESKTOP_MQ);
     this.tabs = Array.from(component.querySelectorAll<HTMLDetailsElement>('details'));
-    this.autoplayTimer = getAutoplayMs(component);
 
     if (!this.tabs.length) {
       console.warn('AutoRotatingTabs: No tabs found.');
@@ -52,7 +35,6 @@ export class AutoRotatingTabs {
   }
 
   private init(): void {
-    this.pauseAutoRotation();
     this.setupEventListeners();
     this.openTabAtCurrentIndex();
 
@@ -75,14 +57,38 @@ export class AutoRotatingTabs {
   }
 
   private setupEventListeners(): void {
-    document.addEventListener(
-      'visibilitychange',
-      () => {
-        if (document.hidden) this.pauseAutoRotation();
-        else this.startAutoRotation();
+    this.component.addEventListener(
+      'animationend',
+      (event) => {
+        if (
+          event.animationName !== PROGRESS_ANIMATION_NAME ||
+          !this.mediaQuery.matches ||
+          !this.isInView ||
+          document.hidden ||
+          !(event.target instanceof Node) ||
+          !this.tabs[this.currentTabIndex].parentElement?.contains(event.target)
+        ) {
+          return;
+        }
+
+        this.currentTabIndex = (this.currentTabIndex + 1) % this.tabs.length;
+        this.openTabAtCurrentIndex();
       },
       { signal: this.abortController.signal }
     );
+
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (document.hidden) {
+          this.pauseAutoRotation();
+        } else {
+          this.startAutoRotation();
+        }
+      },
+      { signal: this.abortController.signal }
+    );
+
     this.tabs.forEach((tab, index) => {
       const toggle = tab.querySelector('summary');
       if (!toggle) return;
@@ -126,31 +132,19 @@ export class AutoRotatingTabs {
     this.tabs.forEach((tab, index) => {
       tab.open = index === this.currentTabIndex;
     });
-    this.startAutoRotation(true);
+    this.startAutoRotation();
   }
 
-  private startAutoRotation(restart = false): void {
+  private startAutoRotation(): void {
     if (!this.mediaQuery.matches || !this.isInView || document.hidden) {
       this.pauseAutoRotation();
       return;
     }
-    if (this.intervalId !== null && !restart) return;
 
-    this.pauseAutoRotation();
-    // Commit the stopped CSS animation before starting a fresh timer and progress bar.
-    void this.component.offsetWidth;
     this.component.classList.remove(OUT_OF_VIEW_CLASS);
-    this.intervalId = window.setInterval(() => {
-      this.currentTabIndex = (this.currentTabIndex + 1) % this.tabs.length;
-      this.openTabAtCurrentIndex();
-    }, this.autoplayTimer);
   }
 
   private pauseAutoRotation(): void {
-    if (this.intervalId !== null) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
     this.component.classList.add(OUT_OF_VIEW_CLASS);
   }
 
