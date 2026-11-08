@@ -25,13 +25,27 @@ function setup(desktop = true) {
   tabs.forEach((tab, index) => {
     tab.parentElement = { contains: (target) => target === progress[index] };
   });
+  const animation = {
+    animationName: 'loaderLine',
+    currentTime: 6000,
+    playState: 'finished',
+    play() {
+      this.playState = 'running';
+    },
+  };
   const component = Object.assign(new EventTarget(), {
     querySelectorAll: () => tabs,
-    classList: { add: (x) => classes.add(x), remove: (x) => classes.delete(x) },
+    classList: {
+      add: (x) => classes.add(x),
+      remove: (x) => classes.delete(x),
+      contains: (x) => classes.has(x),
+    },
+    getAnimations: () => [animation],
   });
   const instance = new AutoRotatingTabs(component);
   return {
     tabs,
+    animation,
     classes,
     summaries,
     instance,
@@ -106,5 +120,22 @@ test('mobile remains manual with no misleading autoplay progress', () => {
   s.summaries[1].dispatchEvent(new Event('click', { cancelable: true }));
   expect(s.tabs[1].open).toBe(true);
   expect(s.classes.has('is-out-of-view')).toBe(true);
+  s.instance.destroy();
+});
+
+test('re-entry restarts a retained finished animation after off-screen rendering', () => {
+  const s = setup();
+  s.enter();
+  s.enter(0);
+  s.animation.currentTime = 6000;
+  s.animation.playState = 'finished';
+  s.enter();
+  expect(s.animation.currentTime).toBe(0);
+  expect(s.animation.playState).toBe('running');
+  s.animation.currentTime = 2000;
+  s.enter();
+  expect(s.animation.currentTime).toBe(2000);
+  s.finish();
+  expect(s.tabs[1].open).toBe(true);
   s.instance.destroy();
 });

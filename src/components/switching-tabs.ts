@@ -141,7 +141,17 @@ export class AutoRotatingTabs {
       return;
     }
 
+    const wasPaused = this.component.classList.contains(OUT_OF_VIEW_CLASS);
     this.component.classList.remove(OUT_OF_VIEW_CLASS);
+
+    if (wasPaused) {
+      this.component.getAnimations({ subtree: true }).forEach((animation) => {
+        if ('animationName' in animation && animation.animationName === PROGRESS_ANIMATION_NAME) {
+          animation.currentTime = 0;
+          animation.play();
+        }
+      });
+    }
   }
 
   private pauseAutoRotation(): void {
