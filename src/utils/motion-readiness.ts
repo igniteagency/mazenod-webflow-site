@@ -15,12 +15,18 @@ export function initMotionReadiness() {
   const home = root.dataset.wfPage === HERO_PAGE;
   const started = performance.now();
   // A late enhancement must not cover or hide content already shown to the visitor.
-  const alreadyPainted = performance.getEntriesByName('first-contentful-paint').length > 0;
-  if (alreadyPainted || document.readyState === 'complete' || started >= HERO_DEADLINE) {
+  if (document.readyState === 'complete' || started >= HERO_DEADLINE) {
+    root.classList.add('mzn-hero-released');
     root.dataset.mznMotionState = 'late-helper';
     return;
   }
-  let heroReleased = !home || reduce.matches || scrollY > 8;
+  const alreadyPainted = performance.getEntriesByName('first-contentful-paint').length > 0;
+  let heroReleased =
+    !home ||
+    reduce.matches ||
+    scrollY > 8 ||
+    (alreadyPainted && !matchMedia('(scripting: enabled)').matches) ||
+    (document.activeElement !== document.body && document.activeElement !== root);
   let ix: Window['WF_IX'] | undefined;
   let footerFrame = 0;
   let geometryFrame = 0;
@@ -29,17 +35,22 @@ export function initMotionReadiness() {
 
   if (!reduce.matches) root.classList.add('mzn-motion-enabled');
   if (!heroReleased) root.classList.add('mzn-hero-boot');
+  else root.classList.add('mzn-hero-released');
 
   function releaseHero(reason: string) {
     clearTimeout(deadline);
     if (heroReleased && root.dataset.mznHeroState) return;
     heroReleased = true;
     root.classList.remove('mzn-hero-boot');
+    root.classList.add('mzn-hero-released');
     root.dataset.mznHeroState = reason;
     interruptions.abort();
   }
 
-  const deadline = window.setTimeout(() => releaseHero('timeout'), HERO_DEADLINE);
+  const deadline = window.setTimeout(
+    () => releaseHero('timeout'),
+    Math.max(0, HERO_DEADLINE - started)
+  );
   const releaseOnInput = () => releaseHero('interrupted');
   for (const name of ['pointerdown', 'touchstart', 'wheel', 'keydown']) {
     addEventListener(name, releaseOnInput, {
@@ -154,7 +165,7 @@ export function initMotionReadiness() {
         Promise.all(images.map(imageReady)),
         Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 500))]),
       ]);
-      if (heroReleased || reduce.matches || performance.now() - started >= HERO_DEADLINE) return;
+      if (heroReleased || reduce.matches || performance.now() >= HERO_DEADLINE) return;
       hero.classList.add('is-ready');
       root.dataset.mznHeroState = 'ready';
       if (!emit('hero-ready')) return releaseHero('missing-ix3');
