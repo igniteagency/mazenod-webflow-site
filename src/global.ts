@@ -10,7 +10,6 @@ import '$utils/disable-webflow-scroll';
 import { disableWebflowAnchorSmoothScroll } from '$utils/disable-webflow-scroll';
 import handleExternalLinks from '$utils/external-link';
 import addMainElementId from '$utils/main-element-id';
-import { initRevealFallback } from '$utils/reveal-fallback';
 import { setSearchResultTextFromQuery } from '$utils/search-query-text';
 
 window.Webflow = window.Webflow || [];
@@ -43,7 +42,6 @@ function UIFunctions() {
   initNewsRichTextGalleries();
   initLightboxes();
   initLightboxGalleries();
-  initRevealFallback();
   initDetailsGroups();
   initNav();
   window.conditionalLoadScript('[data-el="counter"]', 'components/counter.js');
