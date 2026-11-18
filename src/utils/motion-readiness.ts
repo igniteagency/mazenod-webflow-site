@@ -1,5 +1,7 @@
 const HERO_PAGE = '6a508df534dc5c66f1386217';
 const HERO_DEADLINE = 3500;
+const IMAGE_CROPS =
+  '.info-block_image-wrapper, .double-image_big-image-wrapper, .double-image_small-image-wrapper, .card_image-wrapper, .featured-news_inner .news_image-wrapper, .multi-cta_cta-item';
 const FOOTER_BLOCKS = [
   ['links', '.footer_top > :nth-child(1)'],
   ['identity', '.footer_top > :nth-child(2)'],
@@ -150,6 +152,26 @@ export function initMotionReadiness() {
     if (image.decode) await image.decode();
   }
 
+  function prepareImageReveals() {
+    if (reduce.matches) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          observer.unobserve(entry.target);
+          const images = [...entry.target.querySelectorAll<HTMLImageElement>('img')];
+          // A fully clipped lazy image may not load until its wipe has already finished.
+          for (const image of images) image.loading = 'eager';
+          void Promise.allSettled(images.map(imageReady)).then(() => {
+            entry.target.classList.add('mzn-image-ready');
+          });
+        }
+      },
+      { rootMargin: '100% 0px' }
+    );
+    document.querySelectorAll(IMAGE_CROPS).forEach((crop) => observer.observe(crop));
+  }
+
   async function readyHero() {
     if (heroReleased) return;
     const hero = document.querySelector('.home-hero_root');
@@ -181,14 +203,19 @@ export function initMotionReadiness() {
   }
 
   function onDOMReady() {
+    prepareImageReveals();
     measureVideo();
     const hero = document.querySelector('.home-hero_root');
     const slot = hero?.querySelector('.home-hero_video-slot');
     const stage = hero?.querySelector('.home-hero_stage');
+    const video = hero?.querySelector<HTMLVideoElement>('video');
+    const revealVideo = () => video?.closest('.home-hero_video-frame')?.classList.add('mzn-video-loaded');
+    if (video && video.readyState >= 2) revealVideo();
+    else video?.addEventListener('loadeddata', revealVideo, { once: true });
     const observer = new ResizeObserver(queueGeometry);
     if (slot) observer.observe(slot);
     if (stage) observer.observe(stage);
-    hero?.querySelector('video')?.addEventListener('loadedmetadata', queueGeometry);
+    video?.addEventListener('loadedmetadata', queueGeometry);
     document.fonts.ready.then(queueGeometry).catch(() => {});
     document.addEventListener('focusin', (event) => {
       const element = event.target;
