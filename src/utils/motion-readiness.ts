@@ -14,6 +14,12 @@ export function initMotionReadiness() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const home = root.dataset.wfPage === HERO_PAGE;
   const started = performance.now();
+  // A late enhancement must not cover or hide content already shown to the visitor.
+  const alreadyPainted = performance.getEntriesByName('first-contentful-paint').length > 0;
+  if (alreadyPainted || document.readyState === 'complete' || started >= HERO_DEADLINE) {
+    root.dataset.mznMotionState = 'late-helper';
+    return;
+  }
   let heroReleased = !home || reduce.matches || scrollY > 8;
   let ix: Window['WF_IX'] | undefined;
   let footerFrame = 0;
@@ -207,7 +213,8 @@ export function initMotionReadiness() {
 
   const runtimeDeadline = window.setTimeout(() => failOpen('runtime-timeout'), 5000);
   window.Webflow = window.Webflow || [];
-  window.Webflow.push(() => {
+  function connectNativeTimelines() {
+    if (ix || root.classList.contains('mzn-motion-failed')) return;
     try {
       const runtime = window.Webflow as unknown as { require?: (name: string) => Window['WF_IX'] };
       ix = runtime?.require?.('ix3');
@@ -222,5 +229,10 @@ export function initMotionReadiness() {
       console.error('[Mazenod motion] Initialization failed', error);
       failOpen('initialization-error');
     }
+  }
+  // Webflow's module exists before its asynchronous timeline registration finishes.
+  addEventListener('__wf_ix3_ready', connectNativeTimelines, { once: true });
+  window.Webflow.push(() => {
+    if (root.classList.contains('w-mod-ix3')) connectNativeTimelines();
   });
 }
